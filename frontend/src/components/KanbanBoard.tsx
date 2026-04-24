@@ -17,6 +17,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
 
   // Estados do Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [newStep, setNewStep] = useState({ title: '', description: '', priority: 'medium', deadline: '' });
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando tarefas...</div>;
@@ -25,17 +26,47 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     updateStep.mutate({ id: stepId, status: newStatus });
   };
 
-  const handleCreateStep = () => {
+  const handleSaveStep = () => {
     if (!newStep.title) return;
-    createStep.mutate({
-      project_id: projectId,
-      title: newStep.title,
-      description: newStep.description,
-      priority: newStep.priority,
-      deadline: newStep.deadline || undefined,
-    });
+    
+    if (editingStepId) {
+      updateStep.mutate({
+        id: editingStepId,
+        updates: {
+          title: newStep.title,
+          description: newStep.description,
+          priority: newStep.priority,
+          deadline: newStep.deadline || undefined,
+        }
+      });
+    } else {
+      createStep.mutate({
+        project_id: projectId,
+        title: newStep.title,
+        description: newStep.description,
+        priority: newStep.priority,
+        deadline: newStep.deadline || undefined,
+      });
+    }
+    
+    closeModal();
+  };
+
+  const closeModal = () => {
     setIsModalOpen(false);
+    setEditingStepId(null);
     setNewStep({ title: '', description: '', priority: 'medium', deadline: '' });
+  };
+
+  const openEditModal = (step: any) => {
+    setEditingStepId(step.id);
+    setNewStep({
+      title: step.title,
+      description: step.description || '',
+      priority: step.priority,
+      deadline: step.deadline ? new Date(step.deadline).toISOString().split('T')[0] : '',
+    });
+    setIsModalOpen(true);
   };
 
   return (
@@ -61,6 +92,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
             {steps?.filter((s: any) => s.status === col.id).map((step: any) => (
               <div 
                 key={step.id} 
+                onClick={() => openEditModal(step)}
                 className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-sm hover:bg-white/10 transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-3">
@@ -106,7 +138,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                   {COLUMNS.filter(c => c.id !== step.status).map(c => (
                     <button
                       key={c.id}
-                      onClick={() => handleStatusChange(step.id, c.id)}
+                      onClick={(e) => { e.stopPropagation(); handleStatusChange(step.id, c.id); }}
                       className="flex-1 py-1 text-[9px] font-bold uppercase rounded bg-white/5 hover:bg-white/20 transition-colors"
                       title={`Mover para ${c.name}`}
                     >
@@ -120,11 +152,11 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
         </div>
       ))}
 
-      {/* Modal de Nova Etapa */}
+      {/* Modal de Nova/Editar Etapa */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6">Criar Nova Tarefa</h2>
+            <h2 className="text-2xl font-bold mb-6">{editingStepId ? 'Editar Tarefa' : 'Criar Nova Tarefa'}</h2>
             <div className="space-y-4">
               <div>
                 <label className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1 block">Título</label>
@@ -170,21 +202,21 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
               </div>
             </div>
             
-            <div className="flex gap-4 mt-8">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleCreateStep}
-                disabled={!newStep.title || createStep.isPending}
-                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold disabled:opacity-50"
-              >
-                {createStep.isPending ? 'Criando...' : 'Criar Tarefa'}
-              </button>
-            </div>
+            <div className="flex gap-4 pt-4 mt-6 border-t border-white/10">
+                <button 
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveStep}
+                  disabled={createStep.isPending || updateStep.isPending}
+                  className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold disabled:opacity-50"
+                >
+                  {createStep.isPending || updateStep.isPending ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
           </div>
         </div>
       )}

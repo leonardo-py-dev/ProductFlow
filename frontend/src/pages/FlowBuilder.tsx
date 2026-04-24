@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ReactFlow, { 
   addEdge, 
   Background, 
@@ -23,6 +23,10 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  
+  // Edição de Nó
+  const [editingNode, setEditingNode] = useState<any>(null);
+  const [newNodeLabel, setNewNodeLabel] = useState('');
 
   useEffect(() => {
     if (savedFlow) {
@@ -52,6 +56,24 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
       type: 'default',
     };
     setNodes((nds) => [...nds, newNode]);
+  };
+
+  const onNodeDoubleClick = (_: any, node: any) => {
+    setEditingNode(node);
+    setNewNodeLabel(node.data.label);
+  };
+
+  const handleSaveNodeLabel = () => {
+    if (!editingNode || !newNodeLabel) return;
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id === editingNode.id) {
+          return { ...n, data: { ...n.data, label: newNodeLabel } };
+        }
+        return n;
+      })
+    );
+    setEditingNode(null);
   };
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando fluxo...</div>;
@@ -85,6 +107,8 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDoubleClick={onNodeDoubleClick}
+          deleteKeyCode={['Backspace', 'Delete']}
           fitView
         >
           <Background color="#1a1c24" gap={20} />
@@ -96,6 +120,40 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
           />
         </ReactFlow>
       </div>
+
+      {/* Modal de Edição de Nó */}
+      {editingNode && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Renomear Etapa</h2>
+            <input 
+              type="text" 
+              value={newNodeLabel}
+              onChange={(e) => setNewNodeLabel(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveNodeLabel();
+              }}
+            />
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setEditingNode(null)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleSaveNodeLabel}
+                disabled={!newNodeLabel}
+                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold disabled:opacity-50"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

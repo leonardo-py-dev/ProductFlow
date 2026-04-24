@@ -60,3 +60,14 @@ export const createProject = async (req: AuthRequest, res: Response, next: NextF
     next(err);
   }
 };
+
+// DELETE /api/projects/:id
+export const deleteProject = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};

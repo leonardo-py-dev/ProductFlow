@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { getWorkspaces, createWorkspace } from '../controllers/workspaceController';
-import { getProjects, createProject } from '../controllers/projectController';
+import { getWorkspaces, createWorkspace, deleteWorkspace } from '../controllers/workspaceController';
+import { getProjects, createProject, deleteProject } from '../controllers/projectController';
 import { getSteps, createStep, updateStep, deleteStep } from '../controllers/stepController';
 import { getWorkflow, saveWorkflow } from '../controllers/workflowController';
-import { getNotes, getNoteDetail, createNote, updateNote } from '../controllers/noteController';
+import { getNotes, getNoteDetail, createNote, updateNote, deleteNote } from '../controllers/noteController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -14,10 +14,12 @@ router.use(authenticateToken);
 // Workspaces
 router.get('/workspaces', getWorkspaces);
 router.post('/workspaces', createWorkspace);
+router.delete('/workspaces/:id', deleteWorkspace);
 
 // Projetos
 router.get('/projects/:workspaceId', getProjects);
 router.post('/projects', createProject);
+router.delete('/projects/:id', deleteProject);
 
 // Steps (Kanban)
 router.get('/steps/:projectId', getSteps);
@@ -34,5 +36,6 @@ router.get('/notes/:workspaceId', getNotes);
 router.get('/notes/detail/:id', getNoteDetail);
 router.post('/notes', createNote);
 router.patch('/notes/:id', updateNote);
+router.delete('/notes/:id', deleteNote);
 
 export default router;

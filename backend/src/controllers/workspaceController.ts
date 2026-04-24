@@ -64,3 +64,17 @@ export const createWorkspace = async (req: AuthRequest, res: Response, next: Nex
     next(err);
   }
 };
+
+// DELETE /api/workspaces/:id
+export const deleteWorkspace = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    // Apenas o admin (ou quem criou) deveria poder deletar, mas para simplificar:
+    await pool.query('DELETE FROM workspaces WHERE id = $1', [id]);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};

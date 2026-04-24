@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useNotes, useNoteDetail, useCreateNote, useUpdateNote } from '../hooks/useApi';
-import { FileText, Plus, Search, ChevronRight, Save } from 'lucide-react';
+import { useNotes, useNoteDetail, useCreateNote, useUpdateNote, useDeleteNote } from '../hooks/useApi';
+import { FileText, Plus, Search, ChevronRight, Save, Trash2, Edit2 } from 'lucide-react';
 
 export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   const { data: notes, isLoading } = useNotes(workspaceId);
@@ -10,6 +10,11 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   const { data: noteDetail } = useNoteDetail(selectedNoteId || undefined);
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
+  const deleteNote = useDeleteNote();
+
+  // Estados de Edição
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
 
   // Estados do Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,8 +30,10 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   useEffect(() => {
     if (editor && noteDetail) {
       editor.commands.setContent(noteDetail.content);
+      setTempTitle(noteDetail.title);
+      setEditingTitle(false);
     }
-  }, [noteDetail, editor]);
+  }, [noteDetail, editor, selectedNoteId]);
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando notas...</div>;
 
@@ -71,24 +78,63 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
       {/* Editor Area */}
       <main className="flex-1 flex flex-col bg-dark/30">
         <header className="p-6 border-b border-white/10 flex justify-between items-center bg-dark/40 backdrop-blur-md">
-          <h2 className="text-2xl font-bold text-gray-100">{noteDetail?.title || 'Selecione uma nota'}</h2>
+          {editingTitle ? (
+            <input
+              type="text"
+              value={tempTitle}
+              onChange={(e) => setTempTitle(e.target.value)}
+              onBlur={() => {
+                setEditingTitle(false);
+                if (tempTitle !== noteDetail?.title && selectedNoteId) {
+                  updateNote.mutate({ id: selectedNoteId, title: tempTitle });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+              }}
+              className="text-2xl font-bold bg-transparent text-gray-100 border-b border-primary/50 focus:outline-none w-1/2"
+              autoFocus
+            />
+          ) : (
+            <h2 
+              className="text-2xl font-bold text-gray-100 flex items-center gap-2 cursor-pointer group"
+              onClick={() => selectedNoteId && setEditingTitle(true)}
+            >
+              {noteDetail?.title || 'Selecione uma nota'}
+              {selectedNoteId && <Edit2 className="w-4 h-4 opacity-0 group-hover:opacity-100 text-gray-500" />}
+            </h2>
+          )}
           <div className="flex gap-4 items-center">
             <span className="text-[10px] text-gray-500 uppercase tracking-widest">
               Atualizado em: {noteDetail ? new Date(noteDetail.updated_at).toLocaleDateString() : '-'}
             </span>
             {selectedNoteId && (
-              <button 
-                onClick={() => {
-                  if (editor && selectedNoteId) {
-                    updateNote.mutate({ id: selectedNoteId, content: editor.getHTML() });
-                  }
-                }}
-                disabled={updateNote.isPending}
-                className="bg-primary hover:bg-primary/80 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {updateNote.isPending ? 'Salvando...' : 'Salvar'}
-              </button>
+              <>
+                <button 
+                  onClick={() => {
+                    if (confirm(`Excluir a nota "${noteDetail?.title}"?`)) {
+                      deleteNote.mutate({ id: selectedNoteId });
+                      setSelectedNoteId(null);
+                    }
+                  }}
+                  className="p-2 bg-dark hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-xl transition-all"
+                  title="Excluir Nota"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    if (editor && selectedNoteId) {
+                      updateNote.mutate({ id: selectedNoteId, content: editor.getHTML() });
+                    }
+                  }}
+                  disabled={updateNote.isPending}
+                  className="bg-primary hover:bg-primary/80 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {updateNote.isPending ? 'Salvando...' : 'Salvar'}
+                </button>
+              </>
             )}
           </div>
         </header>

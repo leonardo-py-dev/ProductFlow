@@ -47,6 +47,20 @@ export const useCreateWorkspace = () => {
   });
 };
 
+export const useDeleteWorkspace = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      await api.delete(`/workspaces/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+    },
+  });
+};
+
+
 // --- Projetos ---
 
 export const useProjects = (workspaceId?: string) => {
@@ -73,6 +87,21 @@ export const useCreateProject = () => {
     },
   });
 };
+
+export const useDeleteProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      await api.delete(`/projects/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      // Invalidate all projects because we might not know the workspaceId easily without passing it
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+};
+
 
 // --- Steps (Kanban) ---
 
@@ -208,3 +237,18 @@ export const useUpdateNote = () => {
     },
   });
 };
+
+export const useDeleteNote = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      await api.delete(`/notes/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+};
+
+

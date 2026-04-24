@@ -63,3 +63,14 @@ export const updateNote = async (req: Request, res: Response, next: NextFunction
     next(err);
   }
 };
+
+// DELETE /api/notes/:id
+export const deleteNote = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM notes WHERE id = $1', [id]);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
