@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
-import { useWorkspaces, useProjects, api } from '../hooks/useApi';
+import { useWorkspaces, useProjects, useCreateWorkspace, useCreateProject } from '../hooks/useApi';
 
 // Componentes internos
 import KanbanBoard from '../components/KanbanBoard';
@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const { data: workspaces, isLoading: loadingWS } = useWorkspaces();
   const [selectedWSId, setSelectedWSId] = useState<string | null>(null);
   const { data: projects, isLoading: loadingProjects } = useProjects(selectedWSId || workspaces?.[0]?.id);
+  const createWorkspace = useCreateWorkspace();
+  const createProject = useCreateProject();
 
   // Estados de Navegação Interna
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -303,20 +305,24 @@ export default function DashboardPage() {
                 Cancelar
               </button>
               <button 
-                onClick={async () => {
+                onClick={() => {
                   console.log('Tentando criar workspace:', newWSName);
                   if (!newWSName) return;
-                  try {
-                    await api.post('/workspaces', { name: newWSName });
-                    window.location.reload();
-                  } catch (err) {
-                    console.error('Erro ao criar workspace:', err);
-                    alert('Erro ao criar workspace. Verifique o console.');
-                  }
+                  createWorkspace.mutate({ name: newWSName }, {
+                    onSuccess: () => {
+                      setIsWorkspaceModalOpen(false);
+                      setNewWSName('');
+                    },
+                    onError: (err) => {
+                      console.error('Erro ao criar workspace:', err);
+                      alert('Erro ao criar workspace. Verifique o console.');
+                    }
+                  });
                 }}
-                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold"
+                disabled={createWorkspace.isPending}
+                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold disabled:opacity-50"
               >
-                Criar
+                {createWorkspace.isPending ? 'Criando...' : 'Criar'}
               </button>
             </div>
           </div>
@@ -348,23 +354,26 @@ export default function DashboardPage() {
               </button>
               <button 
                 disabled={!activeWorkspace}
-                onClick={async () => {
+                onClick={() => {
                   console.log('Tentando criar projeto:', newProjName, 'no WS:', activeWorkspace?.id);
                   if (!newProjName || !activeWorkspace) return;
-                  try {
-                    await api.post('/projects', { 
-                      name: newProjName, 
-                      workspace_id: activeWorkspace.id 
-                    });
-                    window.location.reload();
-                  } catch (err) {
-                    console.error('Erro ao criar projeto:', err);
-                    alert('Erro ao criar projeto. Verifique o console.');
-                  }
+                  createProject.mutate({ 
+                    name: newProjName, 
+                    workspaceId: activeWorkspace.id 
+                  }, {
+                    onSuccess: () => {
+                      setIsProjectModalOpen(false);
+                      setNewProjName('');
+                    },
+                    onError: (err) => {
+                      console.error('Erro ao criar projeto:', err);
+                      alert('Erro ao criar projeto. Verifique o console.');
+                    }
+                  });
                 }}
                 className="flex-1 px-4 py-3 rounded-xl bg-secondary hover:bg-secondary-dark transition-all font-bold disabled:opacity-50"
               >
-                Criar Projeto
+                {createProject.isPending ? 'Criando...' : 'Criar Projeto'}
               </button>
             </div>
           </div>
