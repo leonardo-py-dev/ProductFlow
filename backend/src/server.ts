@@ -21,6 +21,12 @@ const corsOptions = {
       'http://127.0.0.1:5173',
     ];
 
+    // Se o FRONTEND_URL for '*', permitir tudo
+    if (process.env.FRONTEND_URL === '*') {
+      callback(null, true);
+      return;
+    }
+
     // Permitir requisições sem origin (como mobile apps, curl, etc)
     if (!origin) {
       callback(null, true);
