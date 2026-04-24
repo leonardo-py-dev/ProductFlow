@@ -1,5 +1,6 @@
-import { MoreHorizontal, Plus, Clock, User } from 'lucide-react';
-import { useSteps, useUpdateStep } from '../hooks/useApi';
+import { useState } from 'react';
+import { MoreHorizontal, Plus, Clock, User, Trash2 } from 'lucide-react';
+import { useSteps, useUpdateStep, useCreateStep, useDeleteStep } from '../hooks/useApi';
 
 const COLUMNS = [
   { id: 'pending', name: 'Pendente', color: 'gray' },
@@ -11,11 +12,31 @@ const COLUMNS = [
 export default function KanbanBoard({ projectId }: { projectId: string }) {
   const { data: steps, isLoading } = useSteps(projectId);
   const updateStep = useUpdateStep();
+  const createStep = useCreateStep();
+  const deleteStep = useDeleteStep();
+
+  // Estados do Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState('pending');
+  const [newStep, setNewStep] = useState({ title: '', description: '', priority: 'medium', deadline: '' });
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando tarefas...</div>;
 
   const handleStatusChange = (stepId: string, newStatus: string) => {
     updateStep.mutate({ id: stepId, status: newStatus });
+  };
+
+  const handleCreateStep = () => {
+    if (!newStep.title) return;
+    createStep.mutate({
+      project_id: projectId,
+      title: newStep.title,
+      description: newStep.description,
+      priority: newStep.priority,
+      deadline: newStep.deadline || undefined,
+    });
+    setIsModalOpen(false);
+    setNewStep({ title: '', description: '', priority: 'medium', deadline: '' });
   };
 
   return (
@@ -29,7 +50,10 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 {steps?.filter((s: any) => s.status === col.id).length || 0}
               </span>
             </div>
-            <button className="p-1 hover:bg-white/5 rounded text-gray-500">
+            <button 
+              onClick={() => { setSelectedColumn(col.id); setIsModalOpen(true); }}
+              className="p-1 hover:bg-white/5 rounded text-gray-500 hover:text-white transition-colors"
+            >
               <Plus className="w-4 h-4" />
             </button>
           </div>
@@ -47,8 +71,17 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                   }`}>
                     {step.priority}
                   </span>
-                  <button className="text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 transition-all">
-                    <MoreHorizontal className="w-4 h-4" />
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Tem certeza que deseja excluir esta etapa?')) {
+                        deleteStep.mutate({ id: step.id });
+                      }
+                    }}
+                    className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    title="Excluir"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -87,6 +120,75 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
           </div>
         </div>
       ))}
+
+      {/* Modal de Nova Etapa */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Criar Nova Tarefa</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1 block">Título</label>
+                <input 
+                  type="text" 
+                  value={newStep.title}
+                  onChange={(e) => setNewStep({...newStep, title: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1 block">Descrição</label>
+                <textarea 
+                  value={newStep.description}
+                  onChange={(e) => setNewStep({...newStep, description: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1 block">Prioridade</label>
+                  <select 
+                    value={newStep.priority}
+                    onChange={(e) => setNewStep({...newStep, priority: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 text-white [&>option]:bg-dark"
+                  >
+                    <option value="low">Baixa</option>
+                    <option value="medium">Média</option>
+                    <option value="high">Alta</option>
+                    <option value="critical">Crítica</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1 block">Prazo</label>
+                  <input 
+                    type="date" 
+                    value={newStep.deadline}
+                    onChange={(e) => setNewStep({...newStep, deadline: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 text-white [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-4 mt-8">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleCreateStep}
+                disabled={!newStep.title || createStep.isPending}
+                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold disabled:opacity-50"
+              >
+                {createStep.isPending ? 'Criando...' : 'Criar Tarefa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

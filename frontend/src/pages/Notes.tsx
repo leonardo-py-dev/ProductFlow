@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useNotes, useNoteDetail } from '../hooks/useApi';
-import { FileText, Plus, Search, ChevronRight } from 'lucide-react';
+import { useNotes, useNoteDetail, useCreateNote, useUpdateNote } from '../hooks/useApi';
+import { FileText, Plus, Search, ChevronRight, Save } from 'lucide-react';
 
 export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   const { data: notes, isLoading } = useNotes(workspaceId);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const { data: noteDetail } = useNoteDetail(selectedNoteId || undefined);
+  const createNote = useCreateNote();
+  const updateNote = useUpdateNote();
+
+  // Estados do Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -37,7 +43,10 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
               className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
+          >
             <Plus className="w-4 h-4" />
             Nova Nota
           </button>
@@ -61,18 +70,69 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
 
       {/* Editor Area */}
       <main className="flex-1 flex flex-col bg-dark/30">
-        <header className="p-6 border-b border-white/10 flex justify-between items-center">
+        <header className="p-6 border-b border-white/10 flex justify-between items-center bg-dark/40 backdrop-blur-md">
           <h2 className="text-2xl font-bold text-gray-100">{noteDetail?.title || 'Selecione uma nota'}</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-4 items-center">
             <span className="text-[10px] text-gray-500 uppercase tracking-widest">
               Atualizado em: {noteDetail ? new Date(noteDetail.updated_at).toLocaleDateString() : '-'}
             </span>
+            {selectedNoteId && (
+              <button 
+                onClick={() => {
+                  if (editor && selectedNoteId) {
+                    updateNote.mutate({ id: selectedNoteId, content: editor.getHTML() });
+                  }
+                }}
+                disabled={updateNote.isPending}
+                className="bg-primary hover:bg-primary/80 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {updateNote.isPending ? 'Salvando...' : 'Salvar'}
+              </button>
+            )}
           </div>
         </header>
-        <div className="flex-1 p-8 prose prose-invert max-w-none overflow-y-auto">
-          <EditorContent editor={editor} />
+        <div className="flex-1 p-8 prose prose-invert max-w-none overflow-y-auto outline-none focus:outline-none">
+          <EditorContent editor={editor} className="outline-none" />
         </div>
       </main>
+
+      {/* Modal de Nova Nota */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Criar Nova Nota</h2>
+            <input 
+              type="text" 
+              placeholder="Título da Nota"
+              value={newNoteTitle}
+              onChange={(e) => setNewNoteTitle(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              autoFocus
+            />
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  if (!newNoteTitle) return;
+                  createNote.mutate({ workspace_id: workspaceId, title: newNoteTitle });
+                  setIsModalOpen(false);
+                  setNewNoteTitle('');
+                }}
+                disabled={!newNoteTitle || createNote.isPending}
+                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold disabled:opacity-50"
+              >
+                Criar Nota
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

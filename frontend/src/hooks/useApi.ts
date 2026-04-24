@@ -101,6 +101,33 @@ export const useUpdateStep = () => {
   });
 };
 
+export const useCreateStep = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (newStep: { project_id: string; title: string; description?: string; priority?: string; deadline?: string }) => {
+      const { data } = await api.post('/steps', newStep);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['steps', variables.project_id] });
+    },
+  });
+};
+
+export const useDeleteStep = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      await api.delete(`/steps/${id}`);
+      return id;
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate everything step related just to be safe, or we could pass projectId to the mutation
+      queryClient.invalidateQueries({ queryKey: ['steps'] });
+    },
+  });
+};
+
 // --- Workflows ---
 
 export const useWorkflow = (projectId?: string) => {
@@ -151,5 +178,32 @@ export const useNoteDetail = (id?: string) => {
       return data;
     },
     enabled: !!id,
+  });
+};
+
+export const useCreateNote = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (newNote: { workspace_id: string; title: string }) => {
+      const { data } = await api.post('/notes', newNote);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['notes', variables.workspace_id] });
+    },
+  });
+};
+
+export const useUpdateNote = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...fields }: { id: string; title?: string; content?: string }) => {
+      const { data } = await api.patch(`/notes/${id}`, fields);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['note', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['notes', data.workspace_id] });
+    },
   });
 };
