@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
-import { useWorkspaces, useProjects } from '../hooks/useApi';
+import { useWorkspaces, useProjects, api } from '../hooks/useApi';
 
 // Componentes internos
 import KanbanBoard from '../components/KanbanBoard';
@@ -199,11 +199,14 @@ export default function DashboardPage() {
                   <p className="text-gray-400">Selecione um projeto para ver as etapas ou o fluxo.</p>
                 </div>
                 <button 
-                  onClick={() => setIsProjectModalOpen(true)}
+                  onClick={() => {
+                    console.log('Botão Novo Projeto clicado!');
+                    setIsProjectModalOpen(true);
+                  }}
                   className="bg-gradient-to-r from-primary to-secondary px-6 py-3 rounded-2xl font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   <Plus className="w-5 h-5" />
-                  Novo Projeto
+                  Criar Projeto 🔥
                 </button>
               </div>
 
@@ -301,10 +304,15 @@ export default function DashboardPage() {
               </button>
               <button 
                 onClick={async () => {
+                  console.log('Tentando criar workspace:', newWSName);
                   if (!newWSName) return;
-                  const { api } = await import('../hooks/useApi');
-                  await api.post('/workspaces', { name: newWSName });
-                  window.location.reload(); // Recarga simples para atualizar a lista
+                  try {
+                    await api.post('/workspaces', { name: newWSName });
+                    window.location.reload();
+                  } catch (err) {
+                    console.error('Erro ao criar workspace:', err);
+                    alert('Erro ao criar workspace. Verifique o console.');
+                  }
                 }}
                 className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold"
               >
@@ -341,13 +349,18 @@ export default function DashboardPage() {
               <button 
                 disabled={!activeWorkspace}
                 onClick={async () => {
+                  console.log('Tentando criar projeto:', newProjName, 'no WS:', activeWorkspace?.id);
                   if (!newProjName || !activeWorkspace) return;
-                  const { api } = await import('../hooks/useApi');
-                  await api.post('/projects', { 
-                    name: newProjName, 
-                    workspace_id: activeWorkspace.id 
-                  });
-                  window.location.reload();
+                  try {
+                    await api.post('/projects', { 
+                      name: newProjName, 
+                      workspace_id: activeWorkspace.id 
+                    });
+                    window.location.reload();
+                  } catch (err) {
+                    console.error('Erro ao criar projeto:', err);
+                    alert('Erro ao criar projeto. Verifique o console.');
+                  }
                 }}
                 className="flex-1 px-4 py-3 rounded-xl bg-secondary hover:bg-secondary-dark transition-all font-bold disabled:opacity-50"
               >
