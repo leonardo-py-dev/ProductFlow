@@ -38,6 +38,14 @@ export default function DashboardPage() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
+  // Estados para Modais
+  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  
+  // Estados de Formulário
+  const [newWSName, setNewWSName] = useState('');
+  const [newProjName, setNewProjName] = useState('');
+
   // Workspace Ativo
   const activeWorkspace = workspaces?.find((ws: any) => ws.id === (selectedWSId || workspaces?.[0]?.id));
 
@@ -77,7 +85,10 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between px-2 mb-4">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Workspaces</span>
-              <button className="p-1 hover:bg-white/10 rounded-md transition-colors text-gray-400">
+              <button 
+                onClick={() => setIsWorkspaceModalOpen(true)}
+                className="p-1 hover:bg-white/10 rounded-md transition-colors text-gray-400"
+              >
                 <Plus className="w-4 h-4" />
               </button>
             </div>
@@ -187,7 +198,10 @@ export default function DashboardPage() {
                   <h1 className="text-3xl font-bold mb-2">Meus Projetos</h1>
                   <p className="text-gray-400">Selecione um projeto para ver as etapas ou o fluxo.</p>
                 </div>
-                <button className="bg-gradient-to-r from-primary to-secondary px-6 py-3 rounded-2xl font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
+                <button 
+                  onClick={() => setIsProjectModalOpen(true)}
+                  className="bg-gradient-to-r from-primary to-secondary px-6 py-3 rounded-2xl font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
+                >
                   <Plus className="w-5 h-5" />
                   Novo Projeto
                 </button>
@@ -265,6 +279,85 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
+      {/* Modais */}
+      {isWorkspaceModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Criar Novo Workspace</h2>
+            <input 
+              type="text" 
+              placeholder="Nome do Workspace"
+              value={newWSName}
+              onChange={(e) => setNewWSName(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              autoFocus
+            />
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsWorkspaceModalOpen(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={async () => {
+                  if (!newWSName) return;
+                  const { api } = await import('../hooks/useApi');
+                  await api.post('/workspaces', { name: newWSName });
+                  window.location.reload(); // Recarga simples para atualizar a lista
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark transition-all font-bold"
+              >
+                Criar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isProjectModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Criar Novo Projeto</h2>
+            {!activeWorkspace ? (
+              <p className="text-red-400 mb-6 text-sm">Crie um Workspace primeiro no menu lateral!</p>
+            ) : (
+              <input 
+                type="text" 
+                placeholder="Nome do Projeto"
+                value={newProjName}
+                onChange={(e) => setNewProjName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                autoFocus
+              />
+            )}
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsProjectModalOpen(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                disabled={!activeWorkspace}
+                onClick={async () => {
+                  if (!newProjName || !activeWorkspace) return;
+                  const { api } = await import('../hooks/useApi');
+                  await api.post('/projects', { 
+                    name: newProjName, 
+                    workspace_id: activeWorkspace.id 
+                  });
+                  window.location.reload();
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-secondary hover:bg-secondary-dark transition-all font-bold disabled:opacity-50"
+              >
+                Criar Projeto
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
