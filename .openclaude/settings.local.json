@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm list:*)",
+      "Bash(npm run:*)",
+      "WebSearch",
+      "Bash(cd /c/Users/Leo/OneDrive/0411rea de Trabalho/ProductFlow/frontend)"
+    ]
+  }
+}

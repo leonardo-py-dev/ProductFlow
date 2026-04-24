@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #aa3bff;
+  --color-primary-light: #c084fc;
+  --color-secondary: #c084fc;
+  --color-dark: #16171d;
+  --color-dark-deep: #08060d;
+  --color-light: #f3f4f6;
+  --color-border: #e5e4e7;
+  --color-dark-border: #2e303a;
+}
+
+/* Reset e tipografia base */
+:root {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
