@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Plus, Clock, User, Trash2 } from 'lucide-react';
+import { Plus, Clock, User, Trash2 } from 'lucide-react';
 import { useSteps, useUpdateStep, useCreateStep, useDeleteStep } from '../hooks/useApi';
 
 const COLUMNS = [
@@ -17,7 +17,6 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
 
   // Estados do Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedColumn, setSelectedColumn] = useState('pending');
   const [newStep, setNewStep] = useState({ title: '', description: '', priority: 'medium', deadline: '' });
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando tarefas...</div>;
@@ -51,7 +50,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
               </span>
             </div>
             <button 
-              onClick={() => { setSelectedColumn(col.id); setIsModalOpen(true); }}
+              onClick={() => { setIsModalOpen(true); }}
               className="p-1 hover:bg-white/5 rounded text-gray-500 hover:text-white transition-colors"
             >
               <Plus className="w-4 h-4" />

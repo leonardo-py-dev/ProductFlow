@@ -121,7 +121,7 @@ export const useDeleteStep = () => {
       await api.delete(`/steps/${id}`);
       return id;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidate everything step related just to be safe, or we could pass projectId to the mutation
       queryClient.invalidateQueries({ queryKey: ['steps'] });
     },
@@ -149,8 +149,9 @@ export const useSaveWorkflow = () => {
       const { data } = await api.post('/workflows', workflow);
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['workflow', variables.project_id] });
+    onSuccess: () => {
+      // Invalidate everything if variables not needed or just ['workflow']
+      queryClient.invalidateQueries({ queryKey: ['workflow'] });
     },
   });
 };
