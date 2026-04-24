@@ -57,6 +57,11 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Mensagem de boas-vindas na raiz
+app.get('/', (_req, res) => {
+  res.send('🚀 ProductFlow API is running! Your productivity starts here.');
+});
+
 // Error handler global (Express 5 passa erros async automaticamente)
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[SERVER] Erro não tratado:', err.message);
