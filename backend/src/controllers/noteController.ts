@@ -34,10 +34,10 @@ export const createNote = async (req: Request, res: Response, next: NextFunction
     const userId = (req as any).user?.id;
 
     const result = await pool.query(
-      `INSERT INTO notes (workspace_id, title, content, parent_id, created_by)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO notes (workspace_id, title, content, parent_id)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [workspace_id, title || 'Sem título', content || {}, parent_id || null, userId]
+      [workspace_id, title || 'Sem título', content || {}, parent_id || null]
     );
 
     res.status(201).json(result.rows[0]);

@@ -28,12 +28,12 @@ export const saveWorkflow = async (req: Request, res: Response, next: NextFuncti
     const userId = (req as any).user?.id;
 
     const result = await pool.query(
-      `INSERT INTO workflows (project_id, name, flow_json, created_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO workflows (project_id, name, flow_json)
+       VALUES ($1, $2, $3)
        ON CONFLICT (id) DO UPDATE 
        SET flow_json = EXCLUDED.flow_json, updated_at = NOW()
        RETURNING *`,
-      [project_id, name || 'Fluxo Principal', flow_json, userId]
+      [project_id, name || 'Fluxo Principal', flow_json]
     );
 
     res.json(result.rows[0]);

@@ -49,10 +49,10 @@ export const createProject = async (req: AuthRequest, res: Response, next: NextF
     }
 
     const result = await pool.query(
-      `INSERT INTO projects (workspace_id, name, description, created_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO projects (workspace_id, name, description)
+       VALUES ($1, $2, $3)
        RETURNING *`,
-      [workspaceId, name, description || null, userId]
+      [workspaceId, name, description || null]
     );
 
     res.status(201).json(result.rows[0]);
