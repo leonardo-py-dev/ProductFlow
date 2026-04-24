@@ -19,8 +19,23 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [newStep, setNewStep] = useState({ title: '', description: '', priority: 'medium', deadline: '' });
+  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando tarefas...</div>;
+
+  const filteredSteps = priorityFilter 
+    ? steps?.filter((s: any) => s.priority === priorityFilter) 
+    : steps;
+
+  const totalTasks = steps?.length || 0;
+  const doneTasks = steps?.filter((s: any) => s.status === 'done').length || 0;
+  const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+
+  const isOverdue = (deadline: string) => {
+    if (!deadline) return false;
+    return new Date(deadline) < new Date() && !steps?.find((s: any) => s.deadline === deadline && s.status === 'done');
+  };
 
   const handleStatusChange = (stepId: string, newStatus: string) => {
     updateStep.mutate({ id: stepId, status: newStatus });
@@ -32,12 +47,10 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
     if (editingStepId) {
       updateStep.mutate({
         id: editingStepId,
-        updates: {
-          title: newStep.title,
-          description: newStep.description,
-          priority: newStep.priority,
-          deadline: newStep.deadline || undefined,
-        }
+        title: newStep.title,
+        description: newStep.description,
+        priority: newStep.priority,
+        deadline: newStep.deadline || undefined,
       });
     } else {
       createStep.mutate({
@@ -70,35 +83,80 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="flex gap-6 overflow-x-auto pb-6 h-full min-h-[600px]">
+    <div className="flex flex-col h-full space-y-6">
+      {/* Kanban Header / Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white/5 p-4 rounded-3xl border border-white/10">
+        <div className="flex items-center gap-6">
+          <div>
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Progresso Geral</div>
+            <div className="flex items-center gap-3">
+              <div className="w-48 h-2 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500" 
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className="text-sm font-bold text-primary-light">{progressPercent}%</span>
+            </div>
+          </div>
+          <div className="h-10 w-px bg-white/10 hidden md:block" />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mr-2">Filtrar:</span>
+            {['low', 'medium', 'high', 'critical'].map(p => (
+              <button
+                key={p}
+                onClick={() => setPriorityFilter(priorityFilter === p ? null : p)}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border ${
+                  priorityFilter === p ? 'bg-white/10 border-white/20 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button 
+          onClick={() => { setIsModalOpen(true); setEditingStepId(null); }}
+          className="bg-primary hover:bg-primary-dark px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
+        >
+          <Plus className="w-4 h-4" />
+          Nova Tarefa
+        </button>
+      </div>
+
+      <div className="flex gap-6 overflow-x-auto pb-6 h-full min-h-[600px]">
       {COLUMNS.map((col) => (
         <div key={col.id} className="flex-shrink-0 w-80 flex flex-col gap-4">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                col.id === 'pending' ? 'bg-gray-500' : 
+                col.id === 'in_progress' ? 'bg-blue-500' : 
+                col.id === 'blocked' ? 'bg-red-500' : 'bg-green-500'
+              }`} />
               <h3 className="font-bold text-gray-200">{col.name}</h3>
-              <span className="bg-white/5 px-2 py-0.5 rounded text-xs text-gray-500">
+              <span className="bg-white/5 px-2 py-0.5 rounded text-xs text-gray-500 font-mono">
                 {steps?.filter((s: any) => s.status === col.id).length || 0}
               </span>
             </div>
-            <button 
-              onClick={() => { setIsModalOpen(true); }}
-              className="p-1 hover:bg-white/5 rounded text-gray-500 hover:text-white transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
           </div>
 
           <div className="flex-1 space-y-4 bg-white/2 rounded-2xl p-2 min-h-[200px] border border-transparent hover:border-white/5 transition-colors">
-            {steps?.filter((s: any) => s.status === col.id).map((step: any) => (
+            {filteredSteps?.filter((s: any) => s.status === col.id).map((step: any) => (
               <div 
                 key={step.id} 
                 onClick={() => openEditModal(step)}
-                className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-sm hover:bg-white/10 transition-all cursor-pointer group"
+                className={`bg-white/5 border border-white/10 rounded-2xl p-4 shadow-sm hover:bg-white/10 transition-all cursor-pointer group relative overflow-hidden ${
+                  isOverdue(step.deadline) ? 'border-red-500/50' : ''
+                }`}
               >
+                {isOverdue(step.deadline) && (
+                  <div className="absolute top-0 left-0 w-full h-1 bg-red-500 animate-pulse" />
+                )}
                 <div className="flex items-start justify-between mb-3">
-                  <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${
+                  <span className={`text-[9px] uppercase tracking-widest font-extrabold px-2 py-0.5 rounded-lg ${
                     step.priority === 'high' || step.priority === 'critical' ? 'bg-red-500/20 text-red-400' :
-                    step.priority === 'medium' ? 'bg-primary/20 text-primary-light' : 'bg-gray-500/20 text-gray-400'
+                    step.priority === 'medium' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'
                   }`}>
                     {step.priority}
                   </span>
@@ -120,9 +178,9 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                 <p className="text-sm text-gray-500 line-clamp-2 mb-4">{step.description}</p>
 
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/5">
-                  <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
+                  <div className="flex items-center gap-2 text-[10px] font-bold">
                     {step.deadline && (
-                      <span className="flex items-center gap-1">
+                      <span className={`flex items-center gap-1 ${isOverdue(step.deadline) ? 'text-red-400' : 'text-gray-500'}`}>
                         <Clock className="w-3 h-3" />
                         {new Date(step.deadline).toLocaleDateString()}
                       </span>
@@ -139,7 +197,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
                     <button
                       key={c.id}
                       onClick={(e) => { e.stopPropagation(); handleStatusChange(step.id, c.id); }}
-                      className="flex-1 py-1 text-[9px] font-bold uppercase rounded bg-white/5 hover:bg-white/20 transition-colors"
+                      className="flex-1 py-1 text-[9px] font-bold uppercase rounded-lg bg-white/5 hover:bg-primary/20 hover:text-primary-light transition-all border border-transparent hover:border-primary/20"
                       title={`Mover para ${c.name}`}
                     >
                       {c.name.split(' ')[0]}
@@ -151,6 +209,7 @@ export default function KanbanBoard({ projectId }: { projectId: string }) {
           </div>
         </div>
       ))}
+      </div>
 
       {/* Modal de Nova/Editar Etapa */}
       {isModalOpen && (

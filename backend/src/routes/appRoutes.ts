@@ -4,6 +4,7 @@ import { getProjects, createProject, deleteProject } from '../controllers/projec
 import { getSteps, createStep, updateStep, deleteStep } from '../controllers/stepController';
 import { getWorkflow, saveWorkflow } from '../controllers/workflowController';
 import { getNotes, getNoteDetail, createNote, updateNote, deleteNote } from '../controllers/noteController';
+import { getWorkspaceMetrics } from '../controllers/metricsController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -37,5 +38,8 @@ router.get('/notes/detail/:id', getNoteDetail);
 router.post('/notes', createNote);
 router.patch('/notes/:id', updateNote);
 router.delete('/notes/:id', deleteNote);
+
+// Métricas
+router.get('/metrics/:workspaceId', getWorkspaceMetrics);
 
 export default router;

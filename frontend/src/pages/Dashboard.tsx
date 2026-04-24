@@ -12,16 +12,18 @@ import {
   FileText,
   CheckCircle,
   Trash2,
-  ArrowLeft
+  ArrowLeft,
+  Clock
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
-import { useWorkspaces, useProjects, useCreateWorkspace, useCreateProject, useDeleteWorkspace, useDeleteProject } from '../hooks/useApi';
+import { useWorkspaces, useProjects, useCreateWorkspace, useCreateProject, useDeleteWorkspace, useDeleteProject, useMetrics } from '../hooks/useApi';
 
 // Componentes internos
 import KanbanBoard from '../components/KanbanBoard';
 import FlowBuilderPage from './FlowBuilder';
 import NotesPage from './Notes';
+import QuickCapture from '../components/QuickCapture';
 
 type ViewType = 'dashboard' | 'kanban' | 'workflow' | 'notes';
 
@@ -36,6 +38,7 @@ export default function DashboardPage() {
   const createProject = useCreateProject();
   const deleteWorkspace = useDeleteWorkspace();
   const deleteProject = useDeleteProject();
+  const { data: metrics } = useMetrics(selectedWSId || workspaces?.[0]?.id);
 
   // Estados de Navegação Interna
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -48,6 +51,15 @@ export default function DashboardPage() {
   // Estados de Formulário
   const [newWSName, setNewWSName] = useState('');
   const [newProjName, setNewProjName] = useState('');
+  const [newProjDesc, setNewProjDesc] = useState('');
+
+  // Função para saudação dinâmica
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+  };
 
   // Workspace Ativo
   const activeWorkspace = workspaces?.find((ws: any) => ws.id === (selectedWSId || workspaces?.[0]?.id));
@@ -185,8 +197,10 @@ export default function DashboardPage() {
               </button>
             )}
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <span className="text-gray-500">{activeWorkspace?.name} /</span> 
-              {selectedProjectId ? projects?.find((p: any) => p.id === selectedProjectId)?.name : 'Dashboard'}
+              <span className="text-gray-500">
+                {selectedProjectId ? `${activeWorkspace?.name} /` : `${getGreeting()}, ${user?.name?.split(' ')[0]} 👋`}
+              </span> 
+              {selectedProjectId ? projects?.find((p: any) => p.id === selectedProjectId)?.name : ''}
             </h2>
           </div>
           <div className="flex items-center gap-4">
@@ -209,10 +223,46 @@ export default function DashboardPage() {
         <div className="flex-1 overflow-y-auto">
           {currentView === 'dashboard' && (
             <div className="p-8">
+              {/* Metrics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm">
+                  <div className="flex items-center gap-4 mb-2 text-gray-400">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Concluídas</span>
+                  </div>
+                  <div className="text-3xl font-bold">{metrics?.done_tasks || 0}</div>
+                  <div className="text-[10px] text-gray-500 mt-1">Total de tarefas finalizadas</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm">
+                  <div className="flex items-center gap-4 mb-2 text-gray-400">
+                    <Plus className="w-5 h-5 text-blue-400" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Em Progresso</span>
+                  </div>
+                  <div className="text-3xl font-bold">{metrics?.in_progress_tasks || 0}</div>
+                  <div className="text-[10px] text-gray-500 mt-1">Trabalhando agora</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm">
+                  <div className="flex items-center gap-4 mb-2 text-gray-400">
+                    <Clock className="w-5 h-5 text-secondary" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Prazos Próximos</span>
+                  </div>
+                  <div className="text-3xl font-bold">{metrics?.upcoming_deadlines || 0}</div>
+                  <div className="text-[10px] text-gray-500 mt-1">Próximos 7 dias</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm">
+                  <div className="flex items-center gap-4 mb-2 text-gray-400">
+                    <LayoutDashboard className="w-5 h-5 text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Total Tarefas</span>
+                  </div>
+                  <div className="text-3xl font-bold">{metrics?.total_tasks || 0}</div>
+                  <div className="text-[10px] text-gray-500 mt-1">No workspace atual</div>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h1 className="text-3xl font-bold mb-2">Meus Projetos</h1>
-                  <p className="text-gray-400">Selecione um projeto para ver as etapas ou o fluxo.</p>
+                  <p className="text-gray-400">Gerencie seus fluxos e produtividade abaixo.</p>
                 </div>
                 <button 
                   onClick={() => setIsProjectModalOpen(true)}
@@ -397,18 +447,39 @@ export default function DashboardPage() {
             {!activeWorkspace ? (
               <p className="text-red-400 mb-6 text-sm">Crie um Workspace primeiro no menu lateral!</p>
             ) : (
-              <input 
-                type="text" 
-                placeholder="Nome do Projeto"
-                value={newProjName}
-                onChange={(e) => setNewProjName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                autoFocus
-              />
+              <>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">Nome do Projeto</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Novo Lançamento"
+                      value={newProjName}
+                      onChange={(e) => setNewProjName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">Descrição (Opcional)</label>
+                    <textarea 
+                      placeholder="Descreva o objetivo deste projeto..."
+                      value={newProjDesc}
+                      onChange={(e) => setNewProjDesc(e.target.value)}
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                    />
+                  </div>
+                </div>
+              </>
             )}
             <div className="flex gap-4">
               <button 
-                onClick={() => setIsProjectModalOpen(false)}
+                onClick={() => {
+                  setIsProjectModalOpen(false);
+                  setNewProjName('');
+                  setNewProjDesc('');
+                }}
                 className="flex-1 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
               >
                 Cancelar
@@ -420,11 +491,13 @@ export default function DashboardPage() {
                   if (!newProjName || !activeWorkspace) return;
                   createProject.mutate({ 
                     name: newProjName, 
+                    description: newProjDesc,
                     workspaceId: activeWorkspace.id 
                   }, {
                     onSuccess: () => {
                       setIsProjectModalOpen(false);
                       setNewProjName('');
+                      setNewProjDesc('');
                     },
                     onError: (err) => {
                       console.error('Erro ao criar projeto:', err);
@@ -440,6 +513,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {activeWorkspace && <QuickCapture workspaceId={activeWorkspace.id} />}
     </div>
   );
 }

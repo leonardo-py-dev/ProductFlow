@@ -27,6 +27,7 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
   // Edição de Nó
   const [editingNode, setEditingNode] = useState<any>(null);
   const [newNodeLabel, setNewNodeLabel] = useState('');
+  const [newNodeType, setNewNodeType] = useState<'input' | 'default' | 'output' | 'decision'>('default');
 
   useEffect(() => {
     if (savedFlow) {
@@ -61,6 +62,7 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
   const onNodeDoubleClick = (_: any, node: any) => {
     setEditingNode(node);
     setNewNodeLabel(node.data.label);
+    setNewNodeType(node.type as any || 'default');
   };
 
   const handleSaveNodeLabel = () => {
@@ -68,7 +70,14 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
     setNodes((nds) =>
       nds.map((n) => {
         if (n.id === editingNode.id) {
-          return { ...n, data: { ...n.data, label: newNodeLabel } };
+          return { 
+            ...n, 
+            type: newNodeType === 'decision' ? 'default' : newNodeType,
+            data: { ...n.data, label: newNodeLabel },
+            style: newNodeType === 'decision' ? { backgroundColor: '#facc15', color: '#000', fontWeight: 'bold', borderRadius: '8px' } :
+                   newNodeType === 'input' ? { backgroundColor: '#22c55e', color: '#fff' } :
+                   newNodeType === 'output' ? { backgroundColor: '#ef4444', color: '#fff' } : { backgroundColor: '#3b82f6', color: '#fff' }
+          };
         }
         return n;
       })
@@ -125,17 +134,43 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
       {editingNode && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-dark-light border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6">Renomear Etapa</h2>
-            <input 
-              type="text" 
-              value={newNodeLabel}
-              onChange={(e) => setNewNodeLabel(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSaveNodeLabel();
-              }}
-            />
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">Nome da Etapa</label>
+                <input 
+                  type="text" 
+                  value={newNodeLabel}
+                  onChange={(e) => setNewNodeLabel(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveNodeLabel();
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">Tipo de Etapa</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'input', name: 'Início', color: 'bg-green-500' },
+                    { id: 'default', name: 'Processo', color: 'bg-blue-500' },
+                    { id: 'decision', name: 'Decisão', color: 'bg-yellow-400' },
+                    { id: 'output', name: 'Fim', color: 'bg-red-500' },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setNewNodeType(t.id as any)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        newNodeType === t.id ? 'bg-white/10 border-white/20 text-white' : 'border-transparent text-gray-500 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${t.color}`} />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <div className="flex gap-4">
               <button 
                 onClick={() => setEditingNode(null)}

@@ -252,3 +252,16 @@ export const useDeleteNote = () => {
 };
 
 
+// --- Métricas ---
+
+export const useMetrics = (workspaceId?: string) => {
+  return useQuery({
+    queryKey: ['metrics', workspaceId],
+    queryFn: async () => {
+      if (!workspaceId) return null;
+      const { data } = await api.get(`/metrics/${workspaceId}`);
+      return data;
+    },
+    enabled: !!workspaceId,
+  });
+};
