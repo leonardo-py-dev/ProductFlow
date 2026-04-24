@@ -6,8 +6,8 @@ import ReactFlow, {
   MiniMap, 
   useNodesState, 
   useEdgesState,
-  Connection,
-  Edge
+  type Connection,
+  type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useWorkflow, useSaveWorkflow } from '../hooks/useApi';
@@ -65,7 +65,6 @@ export default function FlowBuilderPage({ projectId }: { projectId: string }) {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           fitView
-          colorMode="dark"
         >
           <Background color="#1a1c24" gap={20} />
           <Controls />
