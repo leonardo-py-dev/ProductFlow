@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, ArrowRight, User, Mail, Lock } from 'lucide-react';
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { api } from '../hooks/useApi';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await api.post('/auth/register', {
         email,
         password,
         name,

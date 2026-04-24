@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { api } from '../hooks/useApi';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await api.post('/auth/login', {
         email,
         password,
       });

@@ -2,8 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-const api = axios.create({
-  baseURL: '/api',
+const getBaseURL = () => {
+  const url = import.meta.env.VITE_API_URL;
+  if (!url) return '/api';
+  // Garante que não tenha barra dupla e adicione /api
+  return `${url.replace(/\/$/, '')}/api`;
+};
+
+export const api = axios.create({
+  baseURL: getBaseURL(),
 });
 
 // Interceptor para adicionar o token JWT em todas as requisições
