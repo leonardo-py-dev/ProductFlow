@@ -71,7 +71,7 @@ export const updateNote = async (req: Request, res: Response, next: NextFunction
     }
     
     if (content) {
-      updates.push(`content = $${paramCount++}::text`);
+      updates.push(`content = $${paramCount++}::jsonb`);
       values.push(content);
     }
     
