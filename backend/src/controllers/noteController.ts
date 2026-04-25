@@ -58,27 +58,35 @@ export const updateNote = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const { title, content } = req.body;
     
-    let query = 'UPDATE notes SET updated_at = NOW()';
-    const params: any[] = [];
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
     
-    if (title !== undefined) {
-      params.push(title);
-      query += `, title = $${params.length}`;
+    if (title) {
+      updates.push(`title = $${paramCount++}`);
+      values.push(title);
     }
     
-    if (content !== undefined) {
-      params.push(content);
-      query += `, content = $${params.length}`;
+    if (content) {
+      updates.push(`content = $${paramCount++}`);
+      values.push(content);
     }
     
-    params.push(id);
-    query += ` WHERE id = $${params.length} RETURNING *`;
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Nada para atualizar.' });
+    }
     
-    const result = await pool.query(query, params);
+    updates.push('updated_at = NOW()');
+    values.push(id);
+    
+    const query = `UPDATE notes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+    
+    const result = await pool.query(query, values);
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Nota não encontrada.' });
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Update note error:', err);
     next(err);
   }
 };

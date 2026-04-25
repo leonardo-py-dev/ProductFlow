@@ -164,8 +164,10 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
                   </button>
                   <button 
                     onClick={() => {
-                      if (editor && selectedNoteId) {
-                        updateNote.mutate({ id: selectedNoteId, content: editor.getHTML() });
+                      if (selectedNoteId && editor) {
+                        const html = editor.getHTML();
+                        console.log('Saving content:', html);
+                        updateNote.mutate({ id: selectedNoteId, content: html });
                       }
                     }}
                     disabled={updateNote.isPending}
