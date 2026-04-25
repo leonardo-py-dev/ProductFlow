@@ -193,13 +193,12 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
               <h3 className="text-xs font-bold text-gray-500 mb-3">Histórico</h3>
               <div className="space-y-2">
                 {versions?.map((v: any) => (
-                  <button
+                  <div
                     key={v.id}
-                    onClick={() => setSelectedVersion(v.id)}
-                    className={`text-xs w-full text-left p-2 rounded-lg ${selectedVersion === v.id ? 'bg-primary/20 text-primary-light' : 'text-gray-500 hover:bg-white/5'}`}
+                    className="text-xs text-gray-500 p-2"
                   >
                     {new Date(v.edited_at).toLocaleDateString()}
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
