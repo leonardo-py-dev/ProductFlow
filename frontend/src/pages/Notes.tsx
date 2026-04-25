@@ -31,16 +31,24 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content: noteDetail?.content || '<p>Selecione uma nota para começar...</p>',
+    content: '<p>Selecione uma nota para começar...</p>',
     editable: !!selectedNoteId,
   });
 
   useEffect(() => {
-    if (editor && noteDetail) {
-      editor.commands.setContent(noteDetail.content);
-      setTempTitle(noteDetail.title);
-      setEditingTitle(false);
+    if (!editor || !noteDetail) return;
+    const content = typeof noteDetail.content === 'string' ? noteDetail.content : '<p></p>';
+    if (!content || content === '{}' || content === '<p></p>' || !content.includes('<')) {
+      editor.commands.setContent('<p>Selecione uma nota para editar...</p>');
+    } else {
+      try {
+        editor.commands.setContent(content);
+      } catch (e) {
+        editor.commands.setContent('<p>Selecione uma nota para editar...</p>');
+      }
     }
+    setTempTitle(noteDetail.title || '');
+    setEditingTitle(false);
   }, [noteDetail, editor, selectedNoteId]);
 
   if (isLoading) return <div className="p-8 text-gray-500">Carregando notas...</div>;
