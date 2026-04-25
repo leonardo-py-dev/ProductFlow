@@ -6,7 +6,7 @@ export const getNotes = async (req: Request, res: Response, next: NextFunction) 
   try {
     const { workspaceId } = req.params;
     const result = await pool.query(
-      'SELECT id, title, parent_id, content::text as content, created_at, updated_at FROM notes WHERE workspace_id = $1 ORDER BY updated_at DESC',
+      'SELECT id, title, parent_id, content->>\'html\' as content, created_at, updated_at FROM notes WHERE workspace_id = $1 ORDER BY updated_at DESC',
       [workspaceId]
     );
     res.json(result.rows);
@@ -29,11 +29,13 @@ export const getNoteDetail = async (req: Request, res: Response, next: NextFunct
   try {
     const { id } = req.params;
     const result = await pool.query(
-      'SELECT id, title, workspace_id, parent_id, content::text as content, created_at, updated_at FROM notes WHERE id = $1',
+      'SELECT id, title, workspace_id, parent_id, content->>\'html\' as content, created_at, updated_at FROM notes WHERE id = $1',
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Nota não encontrada.' });
-    res.json(result.rows[0]);
+    const note = result.rows[0];
+    if (!note.content) note.content = '<p>Selecione uma nota para editar...</p>';
+    res.json(note);
   } catch (err) {
     next(err);
   }
@@ -72,7 +74,7 @@ export const updateNote = async (req: Request, res: Response, next: NextFunction
     
     if (content) {
       updates.push(`content = $${paramCount++}::jsonb`);
-      values.push(content);
+      values.push(JSON.stringify({ html: content }));
     }
     
     if (updates.length === 0) {
