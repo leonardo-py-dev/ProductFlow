@@ -253,7 +253,7 @@ export const useNoteDetail = (id?: string) => {
 export const useCreateNote = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (newNote: { workspace_id: string; title: string; category?: string; is_template?: boolean }) => {
+    mutationFn: async (newNote: { workspace_id: string; title: string; category?: string; is_template?: boolean; content?: string }) => {
       const { data } = await api.post('/notes', newNote);
       return data;
     },

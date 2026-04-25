@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useNotes, useNoteDetail, useCreateNote, useUpdateNote, useDeleteNote, useNoteCategories, useNoteVersions, useVersionDetail } from '../hooks/useApi';
-import { FileText, Plus, Search, ChevronRight, Save, Trash2, Edit2, Folder, Clock, Copy, FolderPlus } from 'lucide-react';
+import { useNotes, useNoteDetail, useCreateNote, useUpdateNote, useDeleteNote, useNoteCategories, useNoteVersions } from '../hooks/useApi';
+import { FileText, Plus, Search, Save, Trash2, Edit2, Clock, Copy } from 'lucide-react';
 
 const TEMPLATES = [
   { name: 'Reunião', content: '<h1>Resumo da Reunião</h1><p><strong>Data:</strong> </p><p><strong>Participantes:</strong> </p><h2>Pontos Discussão</h2><ul><li></li></ul><h2>Decisões</h2><ul><li></li></ul><h2>Ações</h2><ul><li></li></ul>' },
@@ -30,8 +30,6 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   const [newNoteCategory, setNewNoteCategory] = useState('default');
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
-  const { data: versionDetail } = useVersionDetail(selectedVersion || undefined);
 
   const editor = useEditor({
     extensions: [StarterKit],
