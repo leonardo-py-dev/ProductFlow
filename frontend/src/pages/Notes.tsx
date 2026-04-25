@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useNotes, useNoteDetail, useCreateNote, useUpdateNote, useDeleteNote, useNoteCategories, useNoteVersions } from '../hooks/useApi';
-import { FileText, Plus, Search, Save, Trash2, Edit2, Clock, Copy } from 'lucide-react';
+import { useNotes, useNoteDetail, useCreateNote, useUpdateNote, useDeleteNote, useNoteCategories } from '../hooks/useApi';
+import { FileText, Plus, Search, Save, Trash2, Edit2 } from 'lucide-react';
 
 const TEMPLATES = [
   { name: 'Reunião', content: '<h1>Resumo da Reunião</h1><p><strong>Data:</strong> </p><p><strong>Participantes:</strong> </p><h2>Pontos Discussão</h2><ul><li></li></ul><h2>Decisões</h2><ul><li></li></ul><h2>Ações</h2><ul><li></li></ul>' },
   { name: 'Brainstorm', content: '<h1>Brainstorm: Tema</h1><h2>Ideias</h2><ul><li></li><li></li><li></li></ul><h2>Próximos Passos</h2><p></p>' },
   { name: 'Tutorial', content: '<h1>Título do Tutorial</h1><p>Descrição breve...</p><h2>Pré-requisitos</h2><ul><li></li></ul><h2>Passo 1</h2><p></p><h2>Passo 2</h2><p></p><h2>Conclusão</h2><p></p>' },
-  { name: 'Documentação', content: '<h1>Título</h1><h2>Visão Geral</h2><p></p><h2>Detalles</h2><p></p><h2>Referências</h2><p></p>' },
+  { name: 'Documentação', content: '<h1>Título</h1><h2>Visão Geral</h2><p></p><h2>Detalhes</h2><p></p><h2>Referências</h2><p></p>' },
 ];
 
 export default function NotesPage({ workspaceId }: { workspaceId: string }) {
@@ -16,7 +16,6 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   const { data: categories } = useNoteCategories(workspaceId);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const { data: noteDetail } = useNoteDetail(selectedNoteId || undefined);
-  const { data: versions } = useNoteVersions(selectedNoteId || undefined);
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
@@ -29,7 +28,6 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteCategory, setNewNoteCategory] = useState('default');
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -99,7 +97,7 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
                 selectedNoteId === note.id ? 'bg-primary/10 text-primary-light border border-primary/20' : 'hover:bg-white/5 text-gray-400 border border-transparent'
               }`}
             >
-              {note.is_template ? <Copy className="w-4 h-4 text-yellow-500" /> : <FileText className="w-4 h-4 flex-shrink-0" />}
+              <FileText className="w-4 h-4 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate text-left">{note.title}</div>
                 <div className="text-[10px] text-gray-600 truncate">{note.category}</div>
@@ -148,13 +146,6 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
               {selectedNoteId && !noteDetail?.is_template && (
                 <>
                   <button 
-                    onClick={() => setShowHistory(!showHistory)}
-                    className={`p-2 rounded-xl transition-all ${showHistory ? 'bg-primary/20 text-primary-light' : 'bg-dark hover:bg-white/10 text-gray-500'}`}
-                    title="Histórico"
-                  >
-                    <Clock className="w-4 h-4" />
-                  </button>
-                  <button 
                     onClick={() => {
                       if (confirm(`Excluir "${noteDetail?.title}"?`)) {
                         deleteNote.mutate({ id: selectedNoteId });
@@ -184,25 +175,8 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
           {selectedNoteId && !noteDetail?.is_template && <Toolbar editor={editor} />}
         </header>
 
-        <div className="flex-1 flex">
-          <div className="flex-1 p-8 prose prose-invert max-w-none overflow-y-auto">
-            <EditorContent editor={editor} className="outline-none" />
-          </div>
-          {showHistory && selectedNoteId && (
-            <div className="w-48 border-l border-white/10 p-4 overflow-y-auto">
-              <h3 className="text-xs font-bold text-gray-500 mb-3">Histórico</h3>
-              <div className="space-y-2">
-                {versions?.map((v: any) => (
-                  <div
-                    key={v.id}
-                    className="text-xs text-gray-500 p-2"
-                  >
-                    {new Date(v.edited_at).toLocaleDateString()}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="flex-1 p-8 prose prose-invert max-w-none overflow-y-auto">
+          <EditorContent editor={editor} className="outline-none" />
         </div>
       </main>
 
@@ -294,19 +268,6 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   );
 }
 
-function ToolbarButton({ onClick, active, label, italic, strike }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase ${
-        active ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
-      } ${italic ? 'italic' : ''} ${strike ? 'line-through' : ''}`}
-    >
-      {label}
-    </button>
-  );
-}
-
 function Toolbar({ editor }: { editor: any }) {
   if (!editor) return null;
   return (
@@ -322,7 +283,20 @@ function Toolbar({ editor }: { editor: any }) {
       <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} label="• List" />
       <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} label="1. List" />
       <div className="w-px h-4 bg-white/10 mx-1" />
-      <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} label="“ Quote" />
+      <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} label="Quote" />
     </div>
+  );
+}
+
+function ToolbarButton({ onClick, active, label, italic, strike }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase ${
+        active ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+      } ${italic ? 'italic' : ''} ${strike ? 'line-through' : ''}`}
+    >
+      {label}
+    </button>
   );
 }

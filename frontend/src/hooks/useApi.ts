@@ -214,30 +214,6 @@ export const useNoteCategories = (workspaceId?: string) => {
   });
 };
 
-export const useNoteVersions = (noteId?: string) => {
-  return useQuery({
-    queryKey: ['noteVersions', noteId],
-    queryFn: async () => {
-      if (!noteId) return [];
-      const { data } = await api.get(`/notes/versions/${noteId}`);
-      return data;
-    },
-    enabled: !!noteId,
-  });
-};
-
-export const useVersionDetail = (versionId?: string) => {
-  return useQuery({
-    queryKey: ['versionDetail', versionId],
-    queryFn: async () => {
-      if (!versionId) return null;
-      const { data } = await api.get(`/notes/version/${versionId}`);
-      return data;
-    },
-    enabled: !!versionId,
-  });
-};
-
 export const useNoteDetail = (id?: string) => {
   return useQuery({
     queryKey: ['note', id],
