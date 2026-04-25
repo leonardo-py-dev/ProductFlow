@@ -9,10 +9,10 @@ export const getWorkspaceMetrics = async (req: Request, res: Response, next: Nex
     const taskMetricsResult = await pool.query(`
       SELECT 
         COUNT(*) as total_tasks,
-        COUNT(*) FILTER (WHERE status = 'done') as done_tasks,
-        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress_tasks,
-        COUNT(*) FILTER (WHERE status = 'blocked') as blocked_tasks,
-        COUNT(*) FILTER (WHERE deadline IS NOT NULL AND deadline > NOW() AND deadline <= NOW() + INTERVAL '7 days') as upcoming_deadlines
+        COUNT(*) FILTER (WHERE s.status = 'done') as done_tasks,
+        COUNT(*) FILTER (WHERE s.status = 'in_progress') as in_progress_tasks,
+        COUNT(*) FILTER (WHERE s.status = 'blocked') as blocked_tasks,
+        COUNT(*) FILTER (WHERE s.deadline IS NOT NULL AND s.deadline > NOW() AND s.deadline <= NOW() + INTERVAL '7 days') as upcoming_deadlines
       FROM steps s
       JOIN projects p ON s.project_id = p.id
       WHERE p.workspace_id = $1
