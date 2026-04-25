@@ -3,7 +3,7 @@ import { getWorkspaces, createWorkspace, deleteWorkspace } from '../controllers/
 import { getProjects, createProject, deleteProject } from '../controllers/projectController';
 import { getSteps, createStep, updateStep, deleteStep } from '../controllers/stepController';
 import { getWorkflow, saveWorkflow } from '../controllers/workflowController';
-import { getNotes, getNoteDetail, createNote, updateNote, deleteNote } from '../controllers/noteController';
+import { getNotes, getNoteDetail, createNote, updateNote, deleteNote, getCategories, getNoteVersions, getVersionDetail } from '../controllers/noteController';
 import { getWorkspaceMetrics } from '../controllers/metricsController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
@@ -34,7 +34,10 @@ router.post('/workflows', saveWorkflow);
 
 // Notas (Knowledge Base)
 router.get('/notes/:workspaceId', getNotes);
+router.get('/notes/categories/:workspaceId', getCategories);
 router.get('/notes/detail/:id', getNoteDetail);
+router.get('/notes/versions/:noteId', getNoteVersions);
+router.get('/notes/version/:versionId', getVersionDetail);
 router.post('/notes', createNote);
 router.patch('/notes/:id', updateNote);
 router.delete('/notes/:id', deleteNote);

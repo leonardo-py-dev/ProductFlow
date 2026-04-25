@@ -4,7 +4,8 @@
       "Bash(npm list:*)",
       "Bash(npm run:*)",
       "WebSearch",
-      "Bash(cd /c/Users/Leo/OneDrive/0411rea de Trabalho/ProductFlow/frontend)"
+      "Bash(cd /c/Users/Leo/OneDrive/0411rea de Trabalho/ProductFlow/frontend)",
+      "WebFetch(domain:product-flow-53r8-eoae3ygt5-leonardo-py-devs-projects.vercel.app)"
     ]
   }
 }

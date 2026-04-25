@@ -187,15 +187,54 @@ export const useSaveWorkflow = () => {
 
 // --- Notas ---
 
-export const useNotes = (workspaceId?: string) => {
+export const useNotes = (workspaceId?: string, category?: string, search?: string) => {
   return useQuery({
-    queryKey: ['notes', workspaceId],
+    queryKey: ['notes', workspaceId, category, search],
     queryFn: async () => {
       if (!workspaceId) return [];
-      const { data } = await api.get(`/notes/${workspaceId}`);
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.append('category', category);
+      if (search) params.append('search', search);
+      const { data } = await api.get(`/notes/${workspaceId}?${params}`);
       return data;
     },
     enabled: !!workspaceId,
+  });
+};
+
+export const useNoteCategories = (workspaceId?: string) => {
+  return useQuery({
+    queryKey: ['noteCategories', workspaceId],
+    queryFn: async () => {
+      if (!workspaceId) return [];
+      const { data } = await api.get(`/notes/categories/${workspaceId}`);
+      return data;
+    },
+    enabled: !!workspaceId,
+  });
+};
+
+export const useNoteVersions = (noteId?: string) => {
+  return useQuery({
+    queryKey: ['noteVersions', noteId],
+    queryFn: async () => {
+      if (!noteId) return [];
+      const { data } = await api.get(`/notes/versions/${noteId}`);
+      return data;
+    },
+    enabled: !!noteId,
+  });
+};
+
+export const useVersionDetail = (versionId?: string) => {
+  return useQuery({
+    queryKey: ['versionDetail', versionId],
+    queryFn: async () => {
+      if (!versionId) return null;
+      const { data } = await api.get(`/notes/version/${versionId}`);
+      return data;
+    },
+    enabled: !!versionId,
   });
 };
 
@@ -214,12 +253,13 @@ export const useNoteDetail = (id?: string) => {
 export const useCreateNote = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (newNote: { workspace_id: string; title: string }) => {
+    mutationFn: async (newNote: { workspace_id: string; title: string; category?: string; is_template?: boolean }) => {
       const { data } = await api.post('/notes', newNote);
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['notes', variables.workspace_id] });
+      queryClient.invalidateQueries({ queryKey: ['noteCategories', variables.workspace_id] });
     },
   });
 };
@@ -227,13 +267,14 @@ export const useCreateNote = () => {
 export const useUpdateNote = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...fields }: { id: string; title?: string; content?: string }) => {
+    mutationFn: async ({ id, workspace_id, ...fields }: { id: string; workspace_id?: string; title?: string; content?: string; category?: string }) => {
       const { data } = await api.patch(`/notes/${id}`, fields);
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['note', data.id] });
       queryClient.invalidateQueries({ queryKey: ['notes', data.workspace_id] });
+      queryClient.invalidateQueries({ queryKey: ['noteVersions', data.id] });
     },
   });
 };
