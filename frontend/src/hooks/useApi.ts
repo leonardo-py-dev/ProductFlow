@@ -243,14 +243,12 @@ export const useCreateNote = () => {
 export const useUpdateNote = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, workspace_id, ...fields }: { id: string; workspace_id?: string; title?: string; content?: string; category?: string }) => {
+    mutationFn: async ({ id, ...fields }: { id: string; title?: string; content?: string }) => {
       const { data } = await api.patch(`/notes/${id}`, fields);
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['note', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['notes', data.workspace_id] });
-      queryClient.invalidateQueries({ queryKey: ['noteVersions', data.id] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
     },
   });
 };

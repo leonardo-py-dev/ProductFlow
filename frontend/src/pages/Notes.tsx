@@ -31,8 +31,8 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content: '<p>Selecione uma nota para começar...</p>',
-    editable: !!selectedNoteId,
+    content: '<p>Selecione uma nota...</p>',
+    editable: true,
   });
 
   useEffect(() => {
@@ -54,9 +54,7 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
   if (isLoading) return <div className="p-8 text-gray-500">Carregando notas...</div>;
 
   const filteredNotes = notes?.filter((note: any) => {
-    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || note.category === selectedCategory || (selectedCategory === 'templates' && note.is_template);
-    return matchesSearch && matchesCategory;
+    return note.title.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const allCategories = ['all', 'templates', ...(categories || [])];
@@ -129,7 +127,7 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
                 onBlur={() => {
                   setEditingTitle(false);
                   if (tempTitle !== noteDetail?.title && selectedNoteId) {
-                    updateNote.mutate({ id: selectedNoteId, title: tempTitle, workspace_id: workspaceId });
+                    updateNote.mutate({ id: selectedNoteId, title: tempTitle });
                   }
                 }}
                 onKeyDown={(e) => {
@@ -167,7 +165,7 @@ export default function NotesPage({ workspaceId }: { workspaceId: string }) {
                   <button 
                     onClick={() => {
                       if (editor && selectedNoteId) {
-                        updateNote.mutate({ id: selectedNoteId, content: editor.getHTML(), workspace_id: workspaceId });
+                        updateNote.mutate({ id: selectedNoteId, content: editor.getHTML() });
                       }
                     }}
                     disabled={updateNote.isPending}
