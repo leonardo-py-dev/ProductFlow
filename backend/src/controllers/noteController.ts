@@ -5,19 +5,10 @@ import pool from '../config/database';
 export const getNotes = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workspaceId } = req.params;
-    const { search } = req.query;
-    
-    let query = 'SELECT id, title, parent_id, created_at, updated_at FROM notes WHERE workspace_id = $1';
-    const params: any[] = [workspaceId];
-    
-    if (search) {
-      query += ` AND (title ILIKE $2 OR content::text ILIKE $2)`;
-      params.push(`%${search}%`);
-    }
-    
-    query += ' ORDER BY updated_at DESC';
-    
-    const result = await pool.query(query, params);
+    const result = await pool.query(
+      'SELECT id, title, parent_id, created_at, updated_at FROM notes WHERE workspace_id = $1 ORDER BY updated_at DESC',
+      [workspaceId]
+    );
     res.json(result.rows);
   } catch (err) {
     next(err);
@@ -45,30 +36,14 @@ export const getNoteDetail = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-// GET /api/notes/versions/:noteId
-export const getNoteVersions = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { noteId } = req.params;
-    const result = await pool.query(
-      'SELECT id, edited_at FROM note_versions WHERE note_id = $1 ORDER BY edited_at DESC LIMIT 20',
-      [noteId]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    next(err);
-  }
-};
-
 // POST /api/notes
 export const createNote = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { workspace_id, title, content, parent_id } = req.body;
+    const { workspace_id, title } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO notes (workspace_id, title, content, parent_id)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [workspace_id, title || 'Sem título', content || '<p></p>', parent_id || null]
+      `INSERT INTO notes (workspace_id, title) VALUES ($1, $2) RETURNING *`,
+      [workspace_id, title || 'Sem título']
     );
 
     res.status(201).json(result.rows[0]);
@@ -83,10 +58,23 @@ export const updateNote = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const { title, content } = req.body;
     
-    const result = await pool.query(
-      `UPDATE notes SET title = COALESCE($1, title), content = COALESCE($2, content), updated_at = NOW() WHERE id = $3 RETURNING *`,
-      [title, content, id]
-    );
+    let query = 'UPDATE notes SET updated_at = NOW()';
+    const params: any[] = [];
+    
+    if (title !== undefined) {
+      params.push(title);
+      query += `, title = $${params.length}`;
+    }
+    
+    if (content !== undefined) {
+      params.push(content);
+      query += `, content = $${params.length}`;
+    }
+    
+    params.push(id);
+    query += ` WHERE id = $${params.length} RETURNING *`;
+    
+    const result = await pool.query(query, params);
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Nota não encontrada.' });
     res.json(result.rows[0]);
